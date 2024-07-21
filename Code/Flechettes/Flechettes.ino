@@ -6,6 +6,8 @@
 #define TIMEOUT_CHANGE 1000
 #define TIMEOUT 5000
 
+#include "colors.h"
+
 enum BTN_Etat{
   INIT,
   COLOR,
@@ -16,48 +18,31 @@ enum BTN_Etat{
   CHANGE_COLOR
 };
 
-enum Color_List{
-  NONE,
-  ROUGE,
-  BLEU,
-  VERT,
-  VIOLET,
-  JAUNE,
-  MAGENTA,
-  FULL
-};
-
 enum Blink_List{
   FIX,
   CHANGING
 };
 
-const int RougeC[] =    {0, 254, 254};
-const int BleuC[] =     {254, 0  , 254};
-const int VertC[] =     {254, 254, 0  };
-const int VioletC[] =   {0  , 0  , 254};
-const int JauneC[] =    {0  , 254, 0  };
-const int MagentaC[] =  {254, 0  , 0  };
-const int FullC[] =     {0  , 0  , 0  };
-const int NoneC[] =     {254, 254, 254};
 int* Color[] = {NoneC, RougeC, BleuC, VertC, VioletC, JauneC, MagentaC, FullC};
 
 const int Intesitee[] = {0, 50 , 100, 150, 200};
 
 int select, first_pass;
 unsigned long time_BTN, timeout_State, SecCountTEST, SecCount, SecCountBlink;
-int DimmR, DimmB, DimmV, Current_Color, Blink, Time_Diff, Dimmable, UpsideDown, BlinkValue;
+int Current_Color, Blink, Time_Diff, Dimmable, UpsideDown, BlinkValue;
 int BTN_Etat;
 const int Color_count = FULL, Blink_count = CHANGING+1, Dim_count = 4;
 
 
 void setup() {
   Serial.begin(115200);
-  // put your setup code here, to run once:
+  // init controls pins
   pinMode(BLEU_PIN, OUTPUT);
   pinMode(ROUGE_PIN, OUTPUT);
   pinMode(VERT_PIN, OUTPUT);
   pinMode(BTN_PIN, INPUT);
+
+  // init vars
   select = FULL;
   BTN_Etat = INIT;
   Blink = FIX;
@@ -124,8 +109,7 @@ void Blinking(int Value){
         BlinkValue--;
         if((BlinkValue <= Intesitee[Dimmable])){
            UpsideDown = 0;
-           Serial.print("blink Changing  ");
-           Serial.println(Intesitee[Dimmable]);
+           Serial.println("blink Changing  %d", Intesitee[Dimmable]);
         }
       }
       writeLEDS();
@@ -139,11 +123,12 @@ void Blinking(int Value){
   }
 }
 
-void writeLEDS()
+void writeLEDS(int color)
 {
-  DimmR = CheckValue(Color[select][0]);
-  DimmB = CheckValue(Color[select][1]);
-  DimmV = CheckValue(Color[select][2]);
+  int DimmR, DimmB, DimmV;
+  DimmR = CheckValue(Color[color][0]);
+  DimmB = CheckValue(Color[color][1]);
+  DimmV = CheckValue(Color[color][2]);
 
   if(Blink != FIX){
      if(DimmR == 0){
@@ -173,44 +158,23 @@ void writeLEDS()
 
   if((SecCountTEST + 500) <= millis()){
     SecCountTEST = millis();
-    Serial.print("Rouge : ");
-    Serial.println(DimmR);
-    Serial.print("Bleu  : ");
-    Serial.println(DimmB);
-    Serial.print("Vert  : ");
-    Serial.println(DimmV);
+    Serial.println("Rouge : %d\r\nBleu  : %d\r\nVert  : %d\r\n", DimmR, DimmB, DimmV);
   }
 }
 
 void State_Machine()
 {
+  int i;
   switch(BTN_Etat){
     case INIT:
     first_pass = 1;
-    select = FULL;
-    writeLEDS();
-    delay(200);
-    select = ROUGE;
-    writeLEDS();
-    delay(200);
-    select = BLEU;
-    writeLEDS();
-    delay(200);
-    select = VERT;
-    writeLEDS();
-    delay(200);
-    select = VIOLET;
-    writeLEDS();
-    delay(200);
-    select = JAUNE;
-    writeLEDS();
-    delay(200);
-    select = MAGENTA;
-    writeLEDS();
-    delay(200);
+    for(i = 0, i > sizeof(Color), i++)
+    {
+      writeLEDS(i);
+      delay(200);
+    }
     Current_Color = FULL;
-    select = Current_Color;
-    writeLEDS();
+    writeLEDS(FULL);
     delay(200);
     break;
     case COLOR:
